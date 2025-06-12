@@ -1,6 +1,6 @@
 @RecruitmentGiganci.Server_HostAddress = http://localhost:5076
 
-GET {{RecruitmentGiganci.Server_HostAddress}}/weatherforecast/
+GET {{RecruitmentGiganci.Server_HostAddress}}/chats/
 Accept: application/json
 
 ###
