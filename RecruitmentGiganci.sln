@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36202.13 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "recruitmentgiganci.client", "recruitmentgiganci.client\recruitmentgiganci.client.esproj", "{32B62B20-BF60-1326-DC4D-B517108E51EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecruitmentGiganci.Server", "RecruitmentGiganci.Server\RecruitmentGiganci.Server.csproj", "{55B0BC1A-4F80-41C1-9677-65DECB1BEF6D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{32B62B20-BF60-1326-DC4D-B517108E51EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32B62B20-BF60-1326-DC4D-B517108E51EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32B62B20-BF60-1326-DC4D-B517108E51EE}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{32B62B20-BF60-1326-DC4D-B517108E51EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32B62B20-BF60-1326-DC4D-B517108E51EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32B62B20-BF60-1326-DC4D-B517108E51EE}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{55B0BC1A-4F80-41C1-9677-65DECB1BEF6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55B0BC1A-4F80-41C1-9677-65DECB1BEF6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55B0BC1A-4F80-41C1-9677-65DECB1BEF6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55B0BC1A-4F80-41C1-9677-65DECB1BEF6D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FDC4BEAD-C30C-4E32-A8DC-588672058FF1}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,6 @@
+@RecruitmentGiganci.Server_HostAddress = http://localhost:5076
+
+GET {{RecruitmentGiganci.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
