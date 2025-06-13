@@ -1,6 +1,6 @@
 <div class="main-wrapper">
   <div class="title-wrapper">
-    <h1>Giganci Programowania Chatbot</h1>
+    Giganci Programowania Chatbot
   </div>
   
   <div class="sub-wrapper">
@@ -19,7 +19,11 @@
               </button>
             </th>
             <td mat-cell *matCellDef="let element">
-              <mat-card appearance="outlined" class="chat-cell" (click)="selectChat(element.id)">
+              <mat-card
+                        appearance="outlined"
+                        class="chat-cell"
+                        (click)="selectChat(element.id)"
+                        [class.selected-chat-cell]="selectedChat?.id === element.id">
                 <mat-card-header class="card-text">{{ element.name }}</mat-card-header>
               </mat-card>
             </td>
@@ -33,7 +37,7 @@
     <div class="chat-window">
       <ng-container>
         <mat-card class="chat-display">
-          <mat-card-header>
+          <mat-card-header class="chat-header">
             <mat-card-title>
               <ng-container *ngIf="!selectedChat; else selectedName">
                 Start your chat here or select from the menu
@@ -46,19 +50,60 @@
           <mat-card-content class="bubbles-and-input">
             <div class="chat-bubbles-display">
               <ng-container *ngIf="selectedChat">
-                <ng-container class="msg-pair" *ngFor="let pair of parsedSelectedChat">
-                  <div class="user-row">
-                    {{ pair.userPrompt.content }}
-                  </div>
-                  <div class="ai-row">
-                    {{ pair.aiReply.content }} {{ pair.aiReply.opinion }}
-                  </div>
+                <ng-container class="msg-pair" *ngFor="let msg of parsedSelectedChat">
+                  <ng-container *ngIf="msg.type === 'user'; else ai">
+                    <div class="user-row">
+                      <p class="sent-prompt chat-bubble">
+                        {{ msg.content }}
+                      </p>
+                    </div>
+                  </ng-container>
+                  <ng-template #ai>
+                    <div class="ai-row">
+                      <p class="ai-reply chat-bubble">
+                        {{ msg.content || 'No response' }}
+                      </p>
+                      <div class="opinion-wrapper">
+                        <button (click)="saveOpinion(msg.id, 1)"
+                                matIconButton class="opinion-button"
+                                [class.selected-opinion]="msg.opinion === 1">
+                          <mat-icon class="opinion-icon">
+                            thumb_up
+                          </mat-icon>
+                        </button>
+                        <button (click)="saveOpinion(msg.id, -1)"
+                                matIconButton class="opinion-button"
+                                [class.selected-opinion]="msg.opinion === -1">
+                          <mat-icon class="opinion-icon">
+                            thumb_down
+                          </mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </ng-template>
                 </ng-container>
               </ng-container>
             </div>
             <div class="input-wrapper">
-              <input class="chat-input" matInput placeholder="Type here..." />
-              <button matIconButton class="send-bttn"><mat-icon>send</mat-icon></button>
+              <input [disabled]="streamingAnswer"
+                     [(ngModel)]="inputText"
+                     name="inputText"
+                     class="chat-input"
+                     matInput placeholder="Type here..." />
+              <button *ngIf="!streamingAnswer"
+                      matIconButton
+                      class="send-bttn"
+                      (click)="sendPrompt()"
+                      [disabled]="inputText === ''">
+                <mat-icon>send</mat-icon>
+              </button>
+              <button
+                      *ngIf="streamingAnswer"
+                      matIconButton
+                      class="cancel-bttn"
+                      (click)="cancelStreaming()">
+                <mat-icon>cancel</mat-icon>
+              </button>
             </div>
           </mat-card-content>
         </mat-card>

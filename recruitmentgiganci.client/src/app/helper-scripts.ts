@@ -1,27 +1,47 @@
 export interface Message {
+  id: number;
   content: string;
+  type: 'user' | 'ai';
   opinion: null | number;
 }
 
-export interface MessagePair {
-  userPrompt: Message;
-  aiReply: Message;
-}
-
-export function parseChatString(chatString: string): MessagePair[] {
+export function parseChatString(chatString: string): Message[] {
   if (!chatString) {
     return [];
   }
-  const messages: MessagePair[] = [];
+  const messages: Message[] = [];
   const pairs = chatString.split(';;')
-  for (const pair of pairs) {
-    const [userPrompt, aiReply] = pair.split('::');
-    const [aiText, aiOpinion] = aiReply.split('|');
+  let msgId = 0;
+  pairs.forEach(pair => {
+    const [userPrompt, aiReply] = pair.split('::');    
     messages.push({
-      userPrompt: { content: userPrompt.trim(), opinion: null },
-      aiReply: { content: aiText, opinion: parseInt(aiOpinion) }
+      id: msgId++,
+      content: userPrompt,
+      type: 'user',
+      opinion: null,
     });
-  }
+
+    if (aiReply) {
+      const [aiText, aiOpinion] = aiReply.split('|');
+      messages.push({
+        id: msgId++,
+        content: aiText.replaceAll("\\n", "\n"),
+        type: 'ai',
+        opinion: parseInt(aiOpinion),
+      });
+    }
+  });
   
   return messages;
+}
+
+export function formatChatString(messages: Message[]): string {
+  return messages.reduce((acc, msg, index) => {
+    if (msg.type === 'user') {
+      acc += msg.content + '::';
+    } else if (msg.type === 'ai') {
+      acc += msg.content + '|' + (msg.opinion !== null ? msg.opinion : '') + ';;';
+    }
+    return acc;
+  }, '').slice(0, -2); // Remove the last ';;'
 }
