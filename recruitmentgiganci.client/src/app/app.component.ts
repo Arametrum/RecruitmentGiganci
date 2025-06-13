@@ -1,15 +1,29 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnChanges, OnInit } from '@angular/core';
-import { Message, formatChatString, parseChatString } from './helper-scripts';
 
 interface Chat {
   id: number;
   name: string;
-  chatString: string;
 }
 interface NewChat {
   name: string;
-  chatString: string;
+}
+
+interface ChatMsg {
+  id: number;
+  chatId: number;
+  content: string;
+  isAi: boolean;
+  opinion: null | number;
+  chat: Chat;
+}
+
+interface NewChatMsg {
+  chatId: number;
+  content: string;
+  isAi: boolean;
+  opinion: null | number;
+  chat: Chat;
 }
 
 @Component({
@@ -22,9 +36,9 @@ export class AppComponent implements OnInit, OnChanges {
   public displayedColumns: string[] = ['name'];
   public selectedChat: Chat | null = null;
   public loadedChats = false;
-  public parsedSelectedChat: Message[] = [];
   public inputText: string = '';
   public streamingAnswer: boolean = false;
+  public newParsedChat: ChatMsg[] = [];
   private eventSource: EventSource | null = null;
 
   constructor(private http: HttpClient, private ref: ChangeDetectorRef) { }
@@ -42,7 +56,7 @@ export class AppComponent implements OnInit, OnChanges {
     }
 
     this.selectedChat = this.chats.find((chat) => chat.id === chatId) || null;
-    this.parsedSelectedChat = parseChatString(this.selectedChat?.chatString || '');
+    this.getMessages(this.selectedChat!.id);
     this.clearInputText();
   }
 
@@ -52,12 +66,15 @@ export class AppComponent implements OnInit, OnChanges {
     }
 
     this.selectedChat = null;
-    this.parsedSelectedChat = [];
+    this.newParsedChat = [];
     this.clearInputText();
   }
 
   saveOpinion(msgId: number, opinion: number) {
-    const queryMsg = this.parsedSelectedChat[msgId];
+    const queryMsg = this.newParsedChat.find(msg => msg.id === msgId);
+    if (!queryMsg) {
+      return;
+    }
     let targetOpinion = opinion;
 
     if (queryMsg.opinion === opinion) {
@@ -65,8 +82,7 @@ export class AppComponent implements OnInit, OnChanges {
     }
     queryMsg.opinion = targetOpinion;
 
-    this.saveLocalChatString();
-    this.updateRemoteChat();
+    this.updateRemoteMessage(queryMsg);
   }
 
   sendPrompt() {
@@ -74,17 +90,10 @@ export class AppComponent implements OnInit, OnChanges {
       return;
     }
 
-    this.parsedSelectedChat.push({
-      id: this.parsedSelectedChat.length,
-      content: this.inputText,
-      type: 'user',
-      opinion: null,
-    });
     if (!this.selectedChat) {
       this.createNewRemoteChat(this.inputText);
     } else {
-      this.saveLocalChatString();
-      this.getAnswer(this.selectedChat.id);
+      this.createNewRemoteMessage(this.selectedChat.id, this.inputText, false);
       this.clearInputText();
     }
   }
@@ -94,15 +103,39 @@ export class AppComponent implements OnInit, OnChanges {
     this.handleEndStream();
   }
 
+  private updateRemoteMessage(message: ChatMsg) {
+    this.http.put(`/Chat/${message.chatId}/messages/${message.id}`, message).subscribe(
+      () => {
+        console.log('Message updated successfully');
+      },
+      (error) => {
+        console.error('Error updating message:', error);
+      }
+    );
+  }
+
+  private getMessages(chatId: number) {
+    this.http.get<ChatMsg[]>(`/Chat/${chatId}/messages`).subscribe(
+      (result) => {
+        console.log('Fetched messages:', result);
+        this.newParsedChat = result;
+        this.ref.detectChanges();
+      },
+      (error) => {
+        console.error('Error fetching messages:', error);
+      }
+    );
+  }
+
   private createNewRemoteChat(userPrompt: string) {
     const newChat: NewChat = {
       name: userPrompt,
-      chatString: `${userPrompt}::`,
     };
     this.http.post<Chat>('/Chat', newChat).subscribe(
       (result) => {
-        this.addNewLocalChat(result);
-        this.getAnswer(this.selectedChat!.id);
+        this.selectedChat = result;
+        this.getChats();
+        this.createNewRemoteMessage(result.id, userPrompt, false);
         this.clearInputText();
         this.ref.detectChanges();
       },
@@ -112,25 +145,28 @@ export class AppComponent implements OnInit, OnChanges {
     );
   }
 
-  private addNewLocalChat(newChat: Chat) {
-    this.chats.push(newChat);
-    this.selectedChat = newChat;
-    this.parsedSelectedChat = parseChatString(newChat.chatString);
-  }
-
-  private saveLocalChatString() {
-    const stringToSave = formatChatString(this.parsedSelectedChat);
-    this.chats = this.chats.map((chat) => {
-      if (chat.id === this.selectedChat?.id) {
-        return {
-          ...chat,
-          chatString: stringToSave,
-        };
-      } else {
-        return chat;
+  private createNewRemoteMessage(chatId: number, content: string, isAi: boolean) {
+    const newMessage: NewChatMsg = {
+      chatId: chatId,
+      content: content,
+      isAi: isAi,
+      opinion: 0,
+      chat: this.selectedChat!,
+    };
+    this.http.post<ChatMsg>(`/Chat/${chatId}/message`, newMessage).subscribe(
+      (result) => {
+        if (!result.isAi) {
+          this.newParsedChat.push(result);
+          this.getAnswer(this.selectedChat!.id);
+        } else {
+          this.newParsedChat[this.newParsedChat.length - 1] = result;
+        }
+        this.ref.detectChanges();
+      },
+      (error) => {
+        console.error('Error creating new message:', error);
       }
-    });
-    this.selectedChat!.chatString = stringToSave;
+    );
   }
 
   private getChats() {
@@ -145,25 +181,14 @@ export class AppComponent implements OnInit, OnChanges {
     );
   }
 
-  private updateRemoteChat() {
-    if (this.selectedChat) {
-      this.http.put(`/Chat/${this.selectedChat.id}`, this.selectedChat).subscribe(
-        () => {
-          this.ref.detectChanges();
-        },
-        (error) => {
-          console.error('Error updating chat:', error);
-        }
-      );
-    }
-  }
-
   private getAnswer(chatId: number) {
-    this.parsedSelectedChat.push({
-      id: this.parsedSelectedChat.length,
+    this.newParsedChat.push({
+      id: 0,
+      chatId: chatId,
       content: 'Generating...',
-      type: 'ai',
+      isAi: true,
       opinion: 0,
+      chat: this.selectedChat!,
     });
 
     const url = `/Chat/${chatId}/Answer`;
@@ -179,7 +204,7 @@ export class AppComponent implements OnInit, OnChanges {
       }
       accumulated += event.data.replaceAll("\\n", "\n");
 
-      this.parsedSelectedChat[this.parsedSelectedChat.length - 1].content = accumulated + "\nGenerating...";
+      this.newParsedChat[this.newParsedChat.length - 1].content = accumulated + "\nGenerating...";
       this.ref.detectChanges();
     };
 
@@ -199,14 +224,13 @@ export class AppComponent implements OnInit, OnChanges {
 
   private handleEndStream() {
     this.streamingAnswer = false;
-    const cleanedContent = this.parsedSelectedChat[this.parsedSelectedChat.length - 1].content.slice(0, -13); // Remove "Generating...""
-    this.parsedSelectedChat[this.parsedSelectedChat.length - 1].content = cleanedContent;
-    this.ref.detectChanges(); // Ensure the view updates
+    const cleanedContent = this.newParsedChat[this.newParsedChat.length - 1].content.slice(0, -13); // Remove "Generating...""
+    this.newParsedChat[this.newParsedChat.length - 1].content = cleanedContent;
+    this.ref.detectChanges();
     this.eventSource?.close();
     this.eventSource = null;
 
-    this.saveLocalChatString();
-    this.updateRemoteChat();
+    this.createNewRemoteMessage(this.selectedChat!.id, cleanedContent, true);
   }
 
   title = 'recruitmentgiganci.client';

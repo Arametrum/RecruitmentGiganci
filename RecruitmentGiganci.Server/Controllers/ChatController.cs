@@ -28,17 +28,6 @@ namespace RecruitmentGiganci.Server.Controllers
             return chatService.GetChatList() ;
         }  
 
-        [HttpPut("{id}")]
-        public IActionResult PutChat(int id, [FromBody] Chat updatedChat)
-        {
-            if (updatedChat == null || id != updatedChat.Id)
-            {
-                return BadRequest();
-            }
-
-            return chatService.UpdateChat(id, updatedChat);
-        }
-
         [HttpPost(Name = "CreateChat")]
         public IActionResult CreateChat([FromBody] Chat newChat)
         {
@@ -71,6 +60,33 @@ namespace RecruitmentGiganci.Server.Controllers
             await Response.Body.WriteAsync(endBuffer, 0, endBuffer.Length);
             await Response.Body.FlushAsync();
             await Response.CompleteAsync();
+        }
+
+        [HttpPost("{chatId}/message")]
+        public IActionResult PostMessage(int chatId, [FromBody] Message newMessage)
+        {
+            if (newMessage == null || newMessage.Content == null)
+            {
+                return BadRequest("Message content is required.");
+            }
+
+            return chatService.CreateMessage(chatId, newMessage);
+        }
+
+        [HttpGet("{id}/messages")]
+        public IActionResult GetMessages(int id)
+        {
+            return chatService.GetMessages(id);
+        }
+
+        [HttpPut("{id}/messages/{messageId}")]
+        public IActionResult PutMessage(int id, int messageId, [FromBody] Message updatedMessage)
+        {
+            if (updatedMessage == null || messageId != updatedMessage.Id)
+            {
+                return BadRequest();
+            }
+            return chatService.UpdateMessage(id, messageId, updatedMessage);
         }
         // No deleting as I genuinely misread the requirements for the task and have already spent way longer than expected ;-;
     }

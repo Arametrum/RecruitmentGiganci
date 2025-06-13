@@ -22,34 +22,11 @@ namespace RecruitmentGiganci.Server.Services
             return new OkObjectResult(db.Chats.ToList());
         }
 
-        public ActionResult UpdateChat(int id, Chat updatedChat)
-        {
-            if (updatedChat == null || id != updatedChat.Id)
-            {
-                return new BadRequestResult();
-            }
-
-            var chat = db.Chats.FirstOrDefault(c => c.Id == id);
-            if (chat == null)
-            {
-                return new NotFoundResult();
-            }
-
-            chat.Name = updatedChat.Name;
-            chat.ChatString = updatedChat.ChatString;
-
-            db.Entry(chat).State = EntityState.Modified;
-            db.SaveChanges();
-
-            return new OkObjectResult(chat);
-        }
-
         public ActionResult CreateChat(Chat newChat)
         {
             var chat = new Chat
             {
                 Name = newChat.Name,
-                ChatString = newChat.ChatString
             };
 
             db.Chats.Add(chat);
@@ -62,6 +39,47 @@ namespace RecruitmentGiganci.Server.Services
             );
         }
 
+        public ActionResult CreateMessage(int chatId, Message newMessage)
+        {
+            var chat = db.Chats.FirstOrDefault(c => c.Id == chatId);
+            if (chat == null)
+            {
+                return new NotFoundObjectResult("Chat not found.");
+            }
+            newMessage.ChatId = chatId;
+            db.Messages.Add(newMessage);
+            db.SaveChanges();
+            return new CreatedAtActionResult(nameof(GetChatList), "Chat", new { id = chat.Id }, newMessage);
+        }
+
+        public ActionResult GetMessages(int chatId)
+        {
+            var chat = db.Chats.FirstOrDefault(c => c.Id == chatId);
+            if (chat == null)
+            {
+                return new NotFoundObjectResult("Chat not found.");
+            }
+            return new OkObjectResult(db.Messages.Where(m => m.ChatId == chatId).ToList());
+        }
+
+        public ActionResult UpdateMessage(int chatId, int messageId, Message updatedMessage)
+        {
+            var chat = db.Chats.FirstOrDefault(c => c.Id == chatId);
+            if (chat == null)
+            {
+                return new NotFoundObjectResult("Chat not found.");
+            }
+            var message = db.Messages.FirstOrDefault(m => m.Id == messageId && m.ChatId == chatId);
+            if (message == null)
+            {
+                return new NotFoundObjectResult("Message not found.");
+            }
+            message.Opinion = updatedMessage.Opinion;
+            db.Entry(message).State = EntityState.Modified;
+            db.SaveChanges();
+            return new OkObjectResult(message);
+        }
+
         public IEnumerable<string> GetAnswerStream()
         {
             return GenerateSimulatedAnswer();
@@ -69,7 +87,7 @@ namespace RecruitmentGiganci.Server.Services
 
         private List<String> GenerateSimulatedAnswer()
         {
-            int answerType = 3;
+            int answerType = new Random().Next(1, 3);
 
             switch (answerType)
             {

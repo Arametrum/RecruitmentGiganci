@@ -52,8 +52,8 @@
             <mat-card-content class="bubbles-and-input">
               <div class="chat-bubbles-display">
                 <ng-container *ngIf="selectedChat">
-                  <ng-container class="msg-pair" *ngFor="let msg of parsedSelectedChat">
-                    <ng-container *ngIf="msg.type === 'user'; else ai">
+                  <ng-container class="msg-pair" *ngFor="let msg of newParsedChat; index as i">
+                    <ng-container *ngIf="!msg.isAi; else ai">
                       <div class="user-row">
                         <p class="sent-prompt chat-bubble">
                           {{ msg.content }}
@@ -68,14 +68,16 @@
                         <div class="opinion-wrapper">
                           <button (click)="saveOpinion(msg.id, 1)"
                                   mat-icon-button class="opinion-button"
-                                  [class.selected-opinion]="msg.opinion === 1">
+                                  [class.selected-opinion]="msg.opinion === 1"
+                                  [disabled]="streamingAnswer && i === newParsedChat.length - 1">
                             <mat-icon class="opinion-icon">
                               thumb_up
                             </mat-icon>
                           </button>
                           <button (click)="saveOpinion(msg.id, -1)"
                                   mat-icon-button class="opinion-button"
-                                  [class.selected-opinion]="msg.opinion === -1">
+                                  [class.selected-opinion]="msg.opinion === -1"
+                                  [disabled]="streamingAnswer && i === newParsedChat.length - 1">
                             <mat-icon class="opinion-icon">
                               thumb_down
                             </mat-icon>
