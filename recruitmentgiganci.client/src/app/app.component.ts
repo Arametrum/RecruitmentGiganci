@@ -70,6 +70,10 @@ export class AppComponent implements OnInit, OnChanges {
   }
 
   sendPrompt() {
+    if (this.inputText.trim() === '') {
+      return;
+    }
+
     this.parsedSelectedChat.push({
       id: this.parsedSelectedChat.length,
       content: this.inputText,
@@ -77,7 +81,6 @@ export class AppComponent implements OnInit, OnChanges {
       opinion: null,
     });
     if (!this.selectedChat) {
-      console.log('No chat selected, creating a new one.');
       this.createNewRemoteChat(this.inputText);
     } else {
       this.saveLocalChatString();
@@ -86,7 +89,7 @@ export class AppComponent implements OnInit, OnChanges {
     }
   }
 
-  public cancelStreaming() {
+  cancelStreaming() {
     this.eventSource?.close();
     this.handleEndStream();
   }
@@ -147,7 +150,6 @@ export class AppComponent implements OnInit, OnChanges {
       this.http.put(`/Chat/${this.selectedChat.id}`, this.selectedChat).subscribe(
         () => {
           this.ref.detectChanges();
-          console.log('Chat updated successfully');
         },
         (error) => {
           console.error('Error updating chat:', error);
